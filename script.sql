@@ -18,8 +18,222 @@ fields terminated by ','
 lines terminated by '\n'
 ignore 1 rows;
 
-create or replace view healthy as
-select seqn
-from demo_j;
 
-select * from demo_j;
+drop table if exists slq_j;
+create table slq_j (
+    seqn int primary key,
+    told_doctor_trouble_sleeping int,
+    feels_sleepy_during_daytime int
+);
+
+load data local
+infile '~/data/SLQ_J.csv'
+into table slq_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows
+(
+    seqn,
+    @dummy1, /*usual_sleep_time_weekday*/
+    @dummy2, /*usual_num_hours_slept_weekday*/
+    @dummy3, /*usual_sleep_time_weekend,*/
+    @dummy4, /*usual_num_hours_slept_weekend*/
+    @dummy5, /*snoring_frequency*/
+    told_doctor_trouble_sleeping,
+    feels_sleepy_during_daytime
+);
+
+drop table if exists mcq_j;
+create table mcq_j (
+    seqn int primary key,
+    congestive_heart_failure int,
+    coronary_heart_disease int,
+    heart_attack int,
+    thyroid_problem int,
+    chronic_bronchitis int,
+    liver_condition int,
+    fatty_liver int
+);
+
+load data local infile '~/data/MCQ_J.csv'
+into table mcq_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows
+(seqn,
+ congestive_heart_failure,
+ coronary_heart_disease,
+ heart_attack,
+ thyroid_problem,
+ chronic_bronchitis,
+ liver_condition,
+ fatty_liver);
+
+drop table if exists biopro_j;
+create table biopro_j (
+    seqn int primary key,
+    ast_u_l float,
+    albumin_g_dl float,
+    blood_urea_nitrogen_mg_dl float,
+    creatinine_mg_dl float,
+    glucose_mg_dl float,
+    ggt_iu_l float,
+    iron_ug_dl float,
+    total_bilirubin_mg_dl float,
+    cholesterol_mg_dl float,
+    total_protein_g_dl float,
+    triglycerides_mg_dl float,
+    alt_u_l float,
+    uric_acid_mg_dl float
+);
+
+
+
+
+load data local
+infile '~/data/BIOPRO_J.csv'
+into table biopro_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows
+(
+    seqn,
+    alt_u_l,
+    albumin_g_dl,
+    @dummy2,/*alp_IU_L*/
+    ast_u_l,
+    @dummy4, /*bicarbonate_mmol_L*/
+    blood_urea_nitrogen_mg_dl,
+    @dummy6, /*chloride_mmol_L*/
+    @dummy7,/*cpk_IU_L*/
+    creatinine_mg_dl,
+    @dummy9, /*globulin_g_dL*/
+    glucose_mg_dl,
+    ggt_iu_l,
+    iron_ug_dl,
+    @dummy12, /*ldh_IU_L*/
+    @dummy13, @dummy14, @dummy15, /*osmolality_mmol_kg,phosphorus_mg_dL,potassium_mmol_L*/
+    @dummy16,/*sodium_mmol_L*/
+    total_bilirubin_mg_dl,
+    @dummy18, /*calcium_mg_dL*/
+    cholesterol_mg_dl,
+    total_protein_g_dl,
+    triglycerides_mg_dl,
+    uric_acid_mg_dl
+);
+
+select *
+from demo_j d
+left join mcq_j m on d.seqn = m.seqn;
+
+create or replace view healthy as
+select d.seqn
+from demo_j d
+left join mcq_j m on d.seqn = m.seqn
+where
+    m.liver_condition = 2 and
+    m.coronary_heart_disease = 2
+    and m.heart_attack = 2
+;
+
+create or replace view biomarker_baseline as
+select
+    avg(b.glucose_mg_dl) as glucose_mean,
+    stddev_pop(b.glucose_mg_dl) as glucose_std,
+
+    avg(b.cholesterol_mg_dl) as cholesterol_mean,
+    stddev_pop(b.cholesterol_mg_dl) as cholesterol_std,
+
+    avg(b.triglycerides_mg_dl) as triglycerides_mean,
+    stddev_pop(b.triglycerides_mg_dl) as triglycerides_std,
+
+    avg(b.alt_u_l) as alt_mean,
+    stddev_pop(b.alt_u_l) as alt_std,
+
+    avg(b.ast_u_l) as ast_mean,
+    stddev_pop(b.ast_u_l) as ast_std,
+
+    avg(b.ggt_iu_l) as ggt_mean,
+    stddev_pop(b.ggt_iu_l) as ggt_std,
+
+    avg(b.creatinine_mg_dl) as creatinine_mean,
+    stddev_pop(b.creatinine_mg_dl) as creatinine_std,
+
+    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
+    stddev_pop(b.blood_urea_nitrogen_mg_dl) as bun_std,
+
+    avg(b.albumin_g_dl) as albumin_mean,
+    stddev_pop(b.albumin_g_dl) as albumin_std,
+
+    avg(b.total_protein_g_dl) as protein_mean,
+    stddev_pop(b.total_protein_g_dl) as protein_std,
+
+    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
+    stddev_pop(b.total_bilirubin_mg_dl) as bilirubin_std,
+
+    avg(b.iron_ug_dl) as iron_mean,
+    stddev_pop(b.iron_ug_dl) as iron_std,
+
+    avg(b.uric_acid_mg_dl) as uric_acid_mean,
+    stddev_pop(b.uric_acid_mg_dl) as uric_acid_std
+
+from biopro_j b
+join healthy h on b.seqn = h.seqn;
+
+select * from biomarker_baseline b;
+select * from biopro_j b join healthy h on b.seqn = h.seqn limit 9999;
+
+drop table if exists target_cohort;
+create temporary table target_cohort as
+select seqn
+from mcq_j
+where
+    liver_condition = 1
+    or fatty_liver = 1;
+
+drop table if exists cohort_means;
+create temporary table cohort_means as
+select
+    avg(b.glucose_mg_dl) as glucose_mean,
+    avg(b.cholesterol_mg_dl) as cholesterol_mean,
+    avg(b.triglycerides_mg_dl) as triglycerides_mean,
+
+    avg(b.alt_u_l) as alt_mean,
+    avg(b.ast_u_l) as ast_mean,
+    avg(b.ggt_iu_l) as ggt_mean,
+
+    avg(b.creatinine_mg_dl) as creatinine_mean,
+    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
+
+    avg(b.albumin_g_dl) as albumin_mean,
+    avg(b.total_protein_g_dl) as protein_mean,
+
+    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
+
+    avg(b.iron_ug_dl) as iron_mean,
+    avg(b.uric_acid_mg_dl) as uric_acid_mean
+from biopro_j b
+join target_cohort t on b.seqn = t.seqn;
+
+select
+    (c.glucose_mean - b.glucose_mean) / b.glucose_std as glucose_z,
+    (c.cholesterol_mean - b.cholesterol_mean) / b.cholesterol_std as cholesterol_z,
+    (c.triglycerides_mean - b.triglycerides_mean) / b.triglycerides_std as triglycerides_z,
+
+    (c.alt_mean - b.alt_mean) / b.alt_std as alt_z,
+    (c.ast_mean - b.ast_mean) / b.ast_std as ast_z,
+    (c.ggt_mean - b.ggt_mean) / b.ggt_std as ggt_z,
+
+    (c.creatinine_mean - b.creatinine_mean) / b.creatinine_std as creatinine_z,
+    (c.bun_mean - b.bun_mean) / b.bun_std as bun_z,
+
+    (c.albumin_mean - b.albumin_mean) / b.albumin_std as albumin_z,
+    (c.protein_mean - b.protein_mean) / b.protein_std as protein_z,
+
+    (c.bilirubin_mean - b.bilirubin_mean) / b.bilirubin_std as bilirubin_z,
+
+    (c.iron_mean - b.iron_mean) / b.iron_std as iron_z,
+    (c.uric_acid_mean - b.uric_acid_mean) / b.uric_acid_std as uric_acid_z
+
+from cohort_means c
+cross join biomarker_baseline b;
