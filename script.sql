@@ -237,3 +237,55 @@ select
 
 from cohort_means c
 cross join biomarker_baseline b;
+
+
+create or replace view disease_baseline as
+select
+    avg(m.liver_condition = 1) as liver_condition_prev,
+    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(m.coronary_heart_disease = 1) as chd_prev,
+    avg(m.heart_attack = 1) as heart_attack_prev,
+    avg(m.congestive_heart_failure = 1) as chf_prev
+from mcq_j m
+join biopro_j b on m.seqn = b.seqn
+where
+    m.liver_condition not in (7,9)
+    and m.fatty_liver not in (7,9)
+    and m.coronary_heart_disease not in (7,9)
+    and m.heart_attack not in (7,9)
+    and m.congestive_heart_failure not in (7,9);
+
+drop temporary table if exists biomarker_cohort;
+create temporary table biomarker_cohort as
+select seqn
+from biopro_j
+where
+    alt_u_l > 40
+    or ast_u_l > 40
+    or ggt_iu_l > 60;
+
+drop table if exists cohort_disease_prev;
+create temporary table cohort_disease_prev as
+select
+    avg(m.liver_condition = 1) as liver_condition_prev,
+    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(m.coronary_heart_disease = 1) as chd_prev,
+    avg(m.heart_attack = 1) as heart_attack_prev,
+    avg(m.congestive_heart_failure = 1) as chf_prev
+from mcq_j m
+join biomarker_cohort b on m.seqn = b.seqn
+where
+    m.liver_condition not in (7,9)
+    and m.fatty_liver not in (7,9)
+    and m.coronary_heart_disease not in (7,9)
+    and m.heart_attack not in (7,9)
+    and m.congestive_heart_failure not in (7,9);
+
+select
+    c.liver_condition_prev / nullif(b.liver_condition_prev, 0) as liver_condition_risk,
+    c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_risk,
+    c.chd_prev / nullif(b.chd_prev, 0) as chd_risk,
+    c.heart_attack_prev / nullif(b.heart_attack_prev, 0) as heart_attack_risk,
+    c.chf_prev / nullif(b.chf_prev, 0) as chf_risk
+from cohort_disease_prev c
+cross join disease_baseline b;
