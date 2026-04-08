@@ -60,35 +60,45 @@ into table mcq_j
 fields terminated by ','
 lines terminated by '\n'
 ignore 1 rows
-(seqn,
- congestive_heart_failure,
- coronary_heart_disease,
- heart_attack,
- thyroid_problem,
- chronic_bronchitis,
- liver_condition,
- fatty_liver);
+(
+	seqn,
+	congestive_heart_failure,
+    coronary_heart_disease,
+	heart_attack,
+	thyroid_problem,
+	chronic_bronchitis,
+	liver_condition,
+	fatty_liver
+);
 
 drop table if exists biopro_j;
 create table biopro_j (
     seqn int primary key,
-    ast_u_l float,
-    albumin_g_dl float,
-    blood_urea_nitrogen_mg_dl float,
-    creatinine_mg_dl float,
-    glucose_mg_dl float,
-    ggt_iu_l float,
-    iron_ug_dl float,
-    total_bilirubin_mg_dl float,
-    cholesterol_mg_dl float,
-    total_protein_g_dl float,
-    triglycerides_mg_dl float,
     alt_u_l float,
-    uric_acid_mg_dl float
+	albumin_g_dl float,
+	alp_IU_L float,
+	ast_u_l float,
+	bicarbonate_mmol_L float,
+	blood_urea_nitrogen_mg_dl float,
+	chloride_mmol_L float,
+	cpk_IU_L float,
+	creatinine_mg_dl float,
+	globulin_g_dL float,
+	glucose_mg_dl float,
+	ggt_iu_l float,
+	iron_ug_dl float,
+	ldh_IU_L float,
+	osmolality_mmol_kg float,
+	phosphorus_mg_dL float,
+	potassium_mmol_L float,
+	sodium_mmol_L float,
+	total_bilirubin_mg_dl float,
+	calcium_mg_dL float,
+	cholesterol_mg_dl float,
+	total_protein_g_dl float,
+	triglycerides_mg_dl float,
+	uric_acid_mg_dl float
 );
-
-
-
 
 load data local
 infile '~/data/BIOPRO_J.csv'
@@ -100,83 +110,112 @@ ignore 1 rows
     seqn,
     alt_u_l,
     albumin_g_dl,
-    @dummy2,/*alp_IU_L*/
+    alp_IU_L,
     ast_u_l,
-    @dummy4, /*bicarbonate_mmol_L*/
+    bicarbonate_mmol_L,
     blood_urea_nitrogen_mg_dl,
-    @dummy6, /*chloride_mmol_L*/
-    @dummy7,/*cpk_IU_L*/
+    chloride_mmol_L,
+    cpk_IU_L,
     creatinine_mg_dl,
-    @dummy9, /*globulin_g_dL*/
+    globulin_g_dL,
     glucose_mg_dl,
     ggt_iu_l,
     iron_ug_dl,
-    @dummy12, /*ldh_IU_L*/
-    @dummy13, @dummy14, @dummy15, /*osmolality_mmol_kg,phosphorus_mg_dL,potassium_mmol_L*/
-    @dummy16,/*sodium_mmol_L*/
+    ldh_IU_L,
+    osmolality_mmol_kg,
+    phosphorus_mg_dL,
+    potassium_mmol_L,
+    sodium_mmol_L,
     total_bilirubin_mg_dl,
-    @dummy18, /*calcium_mg_dL*/
+    calcium_mg_dL,
     cholesterol_mg_dl,
     total_protein_g_dl,
     triglycerides_mg_dl,
     uric_acid_mg_dl
 );
 
-select *
-from demo_j d
-left join mcq_j m on d.seqn = m.seqn;
-
 create or replace view healthy as
 select d.seqn
 from demo_j d
 left join mcq_j m on d.seqn = m.seqn
 where
-    m.liver_condition = 2 and
+m.liver_condition = 2 and
     m.coronary_heart_disease = 2
-    and m.heart_attack = 2
-;
+    and m.heart_attack = 2;
 
 create or replace view biomarker_baseline as
 select
-    avg(b.glucose_mg_dl) as glucose_mean,
-    stddev_pop(b.glucose_mg_dl) as glucose_std,
-
-    avg(b.cholesterol_mg_dl) as cholesterol_mean,
-    stddev_pop(b.cholesterol_mg_dl) as cholesterol_std,
-
-    avg(b.triglycerides_mg_dl) as triglycerides_mean,
-    stddev_pop(b.triglycerides_mg_dl) as triglycerides_std,
-
     avg(b.alt_u_l) as alt_mean,
     stddev_pop(b.alt_u_l) as alt_std,
-
-    avg(b.ast_u_l) as ast_mean,
-    stddev_pop(b.ast_u_l) as ast_std,
-
-    avg(b.ggt_iu_l) as ggt_mean,
-    stddev_pop(b.ggt_iu_l) as ggt_std,
-
-    avg(b.creatinine_mg_dl) as creatinine_mean,
-    stddev_pop(b.creatinine_mg_dl) as creatinine_std,
-
-    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
-    stddev_pop(b.blood_urea_nitrogen_mg_dl) as bun_std,
 
     avg(b.albumin_g_dl) as albumin_mean,
     stddev_pop(b.albumin_g_dl) as albumin_std,
 
-    avg(b.total_protein_g_dl) as protein_mean,
-    stddev_pop(b.total_protein_g_dl) as protein_std,
+    avg(b.alp_iu_l) as alp_mean,
+    stddev_pop(b.alp_iu_l) as alp_std,
 
-    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
-    stddev_pop(b.total_bilirubin_mg_dl) as bilirubin_std,
+    avg(b.ast_u_l) as ast_mean,
+    stddev_pop(b.ast_u_l) as ast_std,
+
+    avg(b.bicarbonate_mmol_l) as bicarbonate_mean,
+    stddev_pop(b.bicarbonate_mmol_l) as bicarbonate_std,
+
+    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
+    stddev_pop(b.blood_urea_nitrogen_mg_dl) as bun_std,
+
+    avg(b.chloride_mmol_l) as chloride_mean,
+    stddev_pop(b.chloride_mmol_l) as chloride_std,
+
+    avg(b.cpk_iu_l) as cpk_mean,
+    stddev_pop(b.cpk_iu_l) as cpk_std,
+
+    avg(b.creatinine_mg_dl) as creatinine_mean,
+    stddev_pop(b.creatinine_mg_dl) as creatinine_std,
+
+    avg(b.globulin_g_dl) as globulin_mean,
+    stddev_pop(b.globulin_g_dl) as globulin_std,
+
+    avg(b.glucose_mg_dl) as glucose_mean,
+    stddev_pop(b.glucose_mg_dl) as glucose_std,
+
+    avg(b.ggt_iu_l) as ggt_mean,
+    stddev_pop(b.ggt_iu_l) as ggt_std,
 
     avg(b.iron_ug_dl) as iron_mean,
     stddev_pop(b.iron_ug_dl) as iron_std,
 
+    avg(b.ldh_iu_l) as ldh_mean,
+    stddev_pop(b.ldh_iu_l) as ldh_std,
+
+    avg(b.osmolality_mmol_kg) as osmolality_mean,
+    stddev_pop(b.osmolality_mmol_kg) as osmolality_std,
+
+    avg(b.phosphorus_mg_dl) as phosphorus_mean,
+    stddev_pop(b.phosphorus_mg_dl) as phosphorus_std,
+
+    avg(b.potassium_mmol_l) as potassium_mean,
+    stddev_pop(b.potassium_mmol_l) as potassium_std,
+
+    avg(b.sodium_mmol_l) as sodium_mean,
+    stddev_pop(b.sodium_mmol_l) as sodium_std,
+
+    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
+    stddev_pop(b.total_bilirubin_mg_dl) as bilirubin_std,
+
+    avg(b.calcium_mg_dl) as calcium_mean,
+    stddev_pop(b.calcium_mg_dl) as calcium_std,
+
+    avg(b.cholesterol_mg_dl) as cholesterol_mean,
+    stddev_pop(b.cholesterol_mg_dl) as cholesterol_std,
+
+    avg(b.total_protein_g_dl) as protein_mean,
+    stddev_pop(b.total_protein_g_dl) as protein_std,
+
+    avg(b.triglycerides_mg_dl) as triglycerides_mean,
+    stddev_pop(b.triglycerides_mg_dl) as triglycerides_std,
+
     avg(b.uric_acid_mg_dl) as uric_acid_mean,
     stddev_pop(b.uric_acid_mg_dl) as uric_acid_std
-
 from biopro_j b
 join healthy h on b.seqn = h.seqn;
 
@@ -188,53 +227,75 @@ create temporary table target_cohort as
 select seqn
 from mcq_j
 where
-    liver_condition = 1
-    or fatty_liver = 1;
+    coronary_heart_disease = 1
+    and congestive_heart_failure = 1
+    and heart_attack = 1
+    and liver_condition = 1
+    and fatty_liver = 1;
+
+select * from mcq_j
+where
+    coronary_heart_disease = 1
+    and congestive_heart_failure = 1
+    and heart_attack = 1
+    and liver_condition = 1
+    and fatty_liver = 1;
 
 drop table if exists cohort_means;
 create temporary table cohort_means as
 select
-    avg(b.glucose_mg_dl) as glucose_mean,
-    avg(b.cholesterol_mg_dl) as cholesterol_mean,
-    avg(b.triglycerides_mg_dl) as triglycerides_mean,
-
     avg(b.alt_u_l) as alt_mean,
-    avg(b.ast_u_l) as ast_mean,
-    avg(b.ggt_iu_l) as ggt_mean,
-
-    avg(b.creatinine_mg_dl) as creatinine_mean,
-    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
-
     avg(b.albumin_g_dl) as albumin_mean,
-    avg(b.total_protein_g_dl) as protein_mean,
-
-    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
-
+    avg(b.alp_iu_l) as alp_mean,
+    avg(b.ast_u_l) as ast_mean,
+    avg(b.bicarbonate_mmol_l) as bicarbonate_mean,
+    avg(b.blood_urea_nitrogen_mg_dl) as bun_mean,
+    avg(b.chloride_mmol_l) as chloride_mean,
+    avg(b.cpk_iu_l) as cpk_mean,
+    avg(b.creatinine_mg_dl) as creatinine_mean,
+    avg(b.globulin_g_dl) as globulin_mean,
+    avg(b.glucose_mg_dl) as glucose_mean,
+    avg(b.ggt_iu_l) as ggt_mean,
     avg(b.iron_ug_dl) as iron_mean,
+    avg(b.ldh_iu_l) as ldh_mean,
+    avg(b.osmolality_mmol_kg) as osmolality_mean,
+    avg(b.phosphorus_mg_dl) as phosphorus_mean,
+    avg(b.potassium_mmol_l) as potassium_mean,
+    avg(b.sodium_mmol_l) as sodium_mean,
+    avg(b.total_bilirubin_mg_dl) as bilirubin_mean,
+    avg(b.calcium_mg_dl) as calcium_mean,
+    avg(b.cholesterol_mg_dl) as cholesterol_mean,
+    avg(b.total_protein_g_dl) as protein_mean,
+    avg(b.triglycerides_mg_dl) as triglycerides_mean,
     avg(b.uric_acid_mg_dl) as uric_acid_mean
 from biopro_j b
 join target_cohort t on b.seqn = t.seqn;
 
 select
-    (c.glucose_mean - b.glucose_mean) / b.glucose_std as glucose_z,
-    (c.cholesterol_mean - b.cholesterol_mean) / b.cholesterol_std as cholesterol_z,
-    (c.triglycerides_mean - b.triglycerides_mean) / b.triglycerides_std as triglycerides_z,
-
     (c.alt_mean - b.alt_mean) / b.alt_std as alt_z,
-    (c.ast_mean - b.ast_mean) / b.ast_std as ast_z,
-    (c.ggt_mean - b.ggt_mean) / b.ggt_std as ggt_z,
-
-    (c.creatinine_mean - b.creatinine_mean) / b.creatinine_std as creatinine_z,
-    (c.bun_mean - b.bun_mean) / b.bun_std as bun_z,
-
     (c.albumin_mean - b.albumin_mean) / b.albumin_std as albumin_z,
-    (c.protein_mean - b.protein_mean) / b.protein_std as protein_z,
-
-    (c.bilirubin_mean - b.bilirubin_mean) / b.bilirubin_std as bilirubin_z,
-
+    (c.alp_mean - b.alp_mean) / b.alp_std as alp_z,
+    (c.ast_mean - b.ast_mean) / b.ast_std as ast_z,
+    (c.bicarbonate_mean - b.bicarbonate_mean) / b.bicarbonate_std as bicarbonate_z,
+    (c.bun_mean - b.bun_mean) / b.bun_std as bun_z,
+    (c.chloride_mean - b.chloride_mean) / b.chloride_std as chloride_z,
+    (c.cpk_mean - b.cpk_mean) / b.cpk_std as cpk_z,
+    (c.creatinine_mean - b.creatinine_mean) / b.creatinine_std as creatinine_z,
+    (c.globulin_mean - b.globulin_mean) / b.globulin_std as globulin_z,
+    (c.glucose_mean - b.glucose_mean) / b.glucose_std as glucose_z,
+    (c.ggt_mean - b.ggt_mean) / b.ggt_std as ggt_z,
     (c.iron_mean - b.iron_mean) / b.iron_std as iron_z,
+    (c.ldh_mean - b.ldh_mean) / b.ldh_std as ldh_z,
+    (c.osmolality_mean - b.osmolality_mean) / b.osmolality_std as osmolality_z,
+    (c.phosphorus_mean - b.phosphorus_mean) / b.phosphorus_std as phosphorus_z,
+    (c.potassium_mean - b.potassium_mean) / b.potassium_std as potassium_z,
+    (c.sodium_mean - b.sodium_mean) / b.sodium_std as sodium_z,
+    (c.bilirubin_mean - b.bilirubin_mean) / b.bilirubin_std as bilirubin_z,
+    (c.calcium_mean - b.calcium_mean) / b.calcium_std as calcium_z,
+    (c.cholesterol_mean - b.cholesterol_mean) / b.cholesterol_std as cholesterol_z,
+    (c.protein_mean - b.protein_mean) / b.protein_std as protein_z,
+    (c.triglycerides_mean - b.triglycerides_mean) / b.triglycerides_std as triglycerides_z,
     (c.uric_acid_mean - b.uric_acid_mean) / b.uric_acid_std as uric_acid_z
-
 from cohort_means c
 cross join biomarker_baseline b;
 
@@ -263,6 +324,8 @@ where
     alt_u_l > 40
     or ast_u_l > 40
     or ggt_iu_l > 60;
+
+select count(*) from biomarker_cohort;
 
 drop table if exists cohort_disease_prev;
 create temporary table cohort_disease_prev as
