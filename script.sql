@@ -51,7 +51,6 @@ create table mcq_j (
     heart_attack int,
     thyroid_problem int,
     chronic_bronchitis int,
-    liver_condition int,
     fatty_liver int
 );
 
@@ -67,7 +66,7 @@ ignore 1 rows
 	heart_attack,
 	thyroid_problem,
 	chronic_bronchitis,
-	liver_condition,
+	@dummy1, /*liver_condition*/
 	fatty_liver
 );
 
@@ -139,9 +138,12 @@ select d.seqn
 from demo_j d
 left join mcq_j m on d.seqn = m.seqn
 where
-m.liver_condition = 2 and
-    m.coronary_heart_disease = 2
-    and m.heart_attack = 2;
+	congestive_heart_failure != 1
+    and coronary_heart_disease != 1
+	and heart_attack != 1
+	and thyroid_problem != 1
+	and chronic_bronchitis != 1
+	and fatty_liver != 1;
 
 create or replace view biomarker_baseline as
 select
@@ -227,19 +229,13 @@ create temporary table target_cohort as
 select seqn
 from mcq_j
 where
-    coronary_heart_disease = 1
-    and congestive_heart_failure = 1
-    and heart_attack = 1
-    and liver_condition = 1
-    and fatty_liver = 1;
-
-select * from mcq_j
-where
-    coronary_heart_disease = 1
-    and congestive_heart_failure = 1
-    and heart_attack = 1
-    and liver_condition = 1
-    and fatty_liver = 1;
+    #coronary_heart_disease = 1
+    #congestive_heart_failure = 1
+    #heart_attack = 1
+    #thyroid_problem != 1
+	#chronic_bronchitis != 1
+    fatty_liver = 1
+;
 
 drop table if exists cohort_means;
 create temporary table cohort_means as
@@ -302,19 +298,14 @@ cross join biomarker_baseline b;
 
 create or replace view disease_baseline as
 select
-    avg(m.liver_condition = 1) as liver_condition_prev,
-    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(m.congestive_heart_failure = 1) as chf_prev,
     avg(m.coronary_heart_disease = 1) as chd_prev,
-    avg(m.heart_attack = 1) as heart_attack_prev,
-    avg(m.congestive_heart_failure = 1) as chf_prev
+	avg(m.heart_attack = 1) as heart_attack_prev,
+	avg(m.thyroid_problem = 1) as thyroid_problem_prev,
+	avg(m.chronic_bronchitis = 1) as chronic_bronchitis_prev,
+	avg(m.fatty_liver = 1) as fatty_liver_prev
 from mcq_j m
-join biopro_j b on m.seqn = b.seqn
-where
-    m.liver_condition not in (7,9)
-    and m.fatty_liver not in (7,9)
-    and m.coronary_heart_disease not in (7,9)
-    and m.heart_attack not in (7,9)
-    and m.congestive_heart_failure not in (7,9);
+join biopro_j b on m.seqn = b.seqn;
 
 drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
@@ -325,27 +316,21 @@ where
     or ast_u_l > 40
     or ggt_iu_l > 60;
 
-select count(*) from biomarker_cohort;
+select count(*) as biomarker_cohort_count from biomarker_cohort;
 
 drop table if exists cohort_disease_prev;
 create temporary table cohort_disease_prev as
 select
-    avg(m.liver_condition = 1) as liver_condition_prev,
-    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(m.congestive_heart_failure = 1) as chf_prev,
     avg(m.coronary_heart_disease = 1) as chd_prev,
-    avg(m.heart_attack = 1) as heart_attack_prev,
-    avg(m.congestive_heart_failure = 1) as chf_prev
+	avg(m.heart_attack = 1) as heart_attack_prev,
+	avg(m.thyroid_problem = 1) as thyroid_problem_prev,
+	avg(m.chronic_bronchitis = 1) as chronic_bronchitis_prev,
+	avg(m.fatty_liver = 1) as fatty_liver_prev
 from mcq_j m
-join biomarker_cohort b on m.seqn = b.seqn
-where
-    m.liver_condition not in (7,9)
-    and m.fatty_liver not in (7,9)
-    and m.coronary_heart_disease not in (7,9)
-    and m.heart_attack not in (7,9)
-    and m.congestive_heart_failure not in (7,9);
+join biomarker_cohort b on m.seqn = b.seqn;
 
 select
-    c.liver_condition_prev / nullif(b.liver_condition_prev, 0) as liver_condition_risk,
     c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_risk,
     c.chd_prev / nullif(b.chd_prev, 0) as chd_risk,
     c.heart_attack_prev / nullif(b.heart_attack_prev, 0) as heart_attack_risk,
