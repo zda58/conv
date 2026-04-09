@@ -1,8 +1,8 @@
 set global local_infile=ON;
 
-drop database if exists proj;
-create database if not exists proj;
-use proj;
+drop database if exists biorisk;
+create database if not exists biorisk;
+use biorisk;
 
 drop table if exists demo_j;
 create table demo_j (
@@ -221,9 +221,7 @@ select
 from biopro_j b
 join healthy h on b.seqn = h.seqn;
 
-select * from biomarker_baseline b;
-select * from biopro_j b join healthy h on b.seqn = h.seqn limit 9999;
-
+/* Add any target cohort conditions desired for biomarker deviation analysis */
 drop table if exists target_cohort;
 create temporary table target_cohort as
 select seqn
@@ -307,15 +305,13 @@ select
 from mcq_j m
 join biopro_j b on m.seqn = b.seqn;
 
+/* Add any desired biomarker cohort filters for risk analysis */
 drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
 select seqn
 from biopro_j
 where alt_u_l > 25
 and triglycerides_mg_dl > 130;
-
-select * from biopro_j;
-select count(*) as biomarker_cohort_count from biomarker_cohort;
 
 drop table if exists cohort_disease_prev;
 create temporary table cohort_disease_prev as
