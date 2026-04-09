@@ -330,9 +330,11 @@ from mcq_j m
 join biomarker_cohort b on m.seqn = b.seqn;
 
 select
-    c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_risk,
+    c.chf_prev / nullif(b.chf_prev, 0) as chf_risk,
     c.chd_prev / nullif(b.chd_prev, 0) as chd_risk,
     c.heart_attack_prev / nullif(b.heart_attack_prev, 0) as heart_attack_risk,
-    c.chf_prev / nullif(b.chf_prev, 0) as chf_risk
+    c.thyroid_problem_prev / nullif(b.thyroid_problem_prev, 0) as thyroid_problem_risk,
+    c.chronic_bronchitis_prev / nullif(b.chronic_bronchitis_prev, 0) as chronic_bronchitis_risk,
+    c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_risk
 from cohort_disease_prev c
 cross join disease_baseline b;
