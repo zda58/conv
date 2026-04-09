@@ -311,11 +311,10 @@ drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
 select seqn
 from biopro_j
-where
-    alt_u_l > 40
-    or ast_u_l > 40
-    or ggt_iu_l > 60;
+where alt_u_l > 25
+and triglycerides_mg_dl > 130;
 
+select * from biopro_j;
 select count(*) as biomarker_cohort_count from biomarker_cohort;
 
 drop table if exists cohort_disease_prev;
