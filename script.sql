@@ -369,9 +369,10 @@ where
     congestive_heart_failure = 1
     heart_attack = 1
     thyroid_problem != 1
-	chronic_bronchitis != 1
-    */
+    chronic_bronchitis != 1
     fatty_liver = 1
+    */
+    chronic_bronchitis != 1
 ;
 
 drop table if exists cohort_means;
@@ -452,8 +453,8 @@ drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
 select seqn
 from biopro_j
-where cholesterol_mg_dl > 300
-or glucose_mg_dl > 140;
+where alt_u_l > 25
+and triglycerides_mg_dl > 130;
 
 drop table if exists cohort_disease_prev;
 create temporary table cohort_disease_prev as
@@ -542,8 +543,7 @@ create temporary table poor_sleep_low_vitd_cohort as
 select v.seqn
 from vid_j v
 join slq_j s on v.seqn = s.seqn
-where v.vitamin_d_level_nmol_L < 30
-  and s.told_doctor_trouble_sleeping = 1;
+where v.vitamin_d_level_nmol_L between 0 and 10;
 
 drop table if exists poor_sleep_low_vitd_prev;
 create temporary table poor_sleep_low_vitd_prev as
