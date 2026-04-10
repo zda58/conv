@@ -543,7 +543,8 @@ create temporary table poor_sleep_low_vitd_cohort as
 select v.seqn
 from vid_j v
 join slq_j s on v.seqn = s.seqn
-where v.vitamin_d_level_nmol_L between 0 and 10;
+where v.vitamin_d_level_nmol_L between
+0 and 10;
 
 drop table if exists poor_sleep_low_vitd_prev;
 create temporary table poor_sleep_low_vitd_prev as
@@ -595,3 +596,32 @@ select
     (c.globulin_mean - b.globulin_mean) / b.globulin_std as inflammation_globulin_z
 from toxic_diet_means c
 cross join biomarker_baseline b;
+
+
+/*
+procedure that allows user to get their z scores
+currently only gets 4 biomarkers but can extend
+easily as standard deviations are precomputed in
+the biomarker baseline table
+*/
+
+drop procedure if exists compute_user_zscores;
+delimiter //
+
+create procedure compute_user_zscores(
+    in user_alt float,
+    in user_glucose float,
+    in user_cholesterol float,
+    in user_triglycerides float
+)
+begin
+    select
+        (user_alt - b.alt_mean) / b.alt_std as alt_z,
+        (user_glucose - b.glucose_mean) / b.glucose_std as glucose_z,
+        (user_cholesterol - b.cholesterol_mean) / b.cholesterol_std as cholesterol_z,
+        (user_triglycerides - b.triglycerides_mean) / b.triglycerides_std as triglycerides_z
+    from biomarker_baseline b;
+end //
+delimiter ;
+
+call compute_user_zscores(30, 110, 210, 180);
