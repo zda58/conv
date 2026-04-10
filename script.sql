@@ -4,11 +4,38 @@ drop database if exists biorisk;
 create database if not exists biorisk;
 use biorisk;
 
+drop table if exists gender_lookup;
+create table gender_lookup (
+    code int primary key,
+    meaning varchar(50)
+);
+insert into gender_lookup (code, meaning) values 
+(1, 'Male'), (2, 'Female');
+
+drop table if exists response_lookup;
+create table response_lookup (
+    code int primary key,
+    meaning varchar(50)
+);
+insert into response_lookup (code, meaning) values 
+(1, 'Yes'), (2, 'No'), (7, 'Refused'), (9, 'Don''t Know');
+
+drop table if exists frequency_lookup;
+create table frequency_lookup (
+    code int primary key,
+    meaning varchar(50)
+);
+
+insert into frequency_lookup (code, meaning) values 
+(0, 'Not at all'), (1, 'Several days'), (2, 'More than half the days'),
+(3, 'Nearly every day'), (7, 'Refused'), (9, 'Don''t Know');
+
 drop table if exists demo_j;
 create table demo_j (
 	seqn int primary key,
     gender int,
-    age_at_screening float
+    age_at_screening float,
+    foreign key (gender) references gender_lookup (code)
 );
 
 load data local
@@ -23,7 +50,8 @@ drop table if exists slq_j;
 create table slq_j (
     seqn int primary key,
     told_doctor_trouble_sleeping int,
-    feels_sleepy_during_daytime int
+    foreign key (seqn) references demo_j (seqn),
+    foreign key (told_doctor_trouble_sleeping) references response_lookup (code)
 );
 
 load data local
@@ -40,8 +68,101 @@ ignore 1 rows
     @dummy4, /*usual_num_hours_slept_weekend*/
     @dummy5, /*snoring_frequency*/
     told_doctor_trouble_sleeping,
-    feels_sleepy_during_daytime
+    @dummy6 /*feels_sleepy_during_daytime*/
 );
+
+drop table if exists dpq_j;
+create table dpq_j (
+    seqn int primary key,
+    little_interest_in_doing_things int,
+    feeling_depressed int,
+    sleep_issues int,
+    low_energy int,
+    appetite_issues int,
+    foreign key (seqn) references demo_j (seqn),
+    foreign key (little_interest_in_doing_things) references frequency_lookup (code),
+    foreign key (feeling_depressed) references frequency_lookup (code),
+    foreign key (sleep_issues) references frequency_lookup (code),
+    foreign key (low_energy) references frequency_lookup (code),
+    foreign key (appetite_issues) references frequency_lookup (code)
+);
+
+load data local infile '~/data/DPQ_J.csv'
+into table dpq_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows;
+
+drop table if exists vid_j;
+create table vid_j (
+    seqn int primary key,
+    vitamin_d_level_nmol_L float,
+    foreign key (seqn) references demo_j (seqn)
+);
+
+load data local infile '~/data/VID_J.csv'
+into table vid_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows;
+
+drop table if exists diet_j;
+create table diet_j (
+    seqn int primary key,
+    energy_kcal float,
+    protein_g float,
+    carbs_g float,
+    sugars_g float,
+    fiber_g float,
+    total_fat_g float,
+    saturated_fat_g float,
+    monounsaturated_fat_g float,
+    polyunsaturated_fat_g float,
+    cholesterol_mg float,
+    vitamin_e_alpha_tocopherol_mg float,
+    vitamin_e_added_alpha_tocopherol_mg float,
+    retinol_mcg float,
+    vitamin_a_mcg float,
+    alpha_carotene_mcg float,
+    beta_carotene_mcg float,
+    beta_cryptoxanthin_mcg float,
+    lycopene_mcg float,
+    lutein_zeaxanthin_mcg float,
+    vitamin_b1_mg float,
+    vitamin_b2_mg float,
+    niacin_mg float,
+    vitamin_b6_mg float,
+    folate_total_mcg float,
+    folic_acid_mcg float,
+    food_folate_mcg float,
+    folate_dfe_mcg float,
+    choline_mg float,
+    vitamin_b12_mcg float,
+    vitamin_b12_added_mcg float,
+    vitamin_c_mg float,
+    vitamin_d_mcg float,
+    vitamin_k_mcg float,
+    calcium_mg float,
+    phosphorus_mg float,
+    magnesium_mg float,
+    iron_mg float,
+    zinc_mg float,
+    copper_mg float,
+    sodium_mg float,
+    potassium_mg float,
+    selenium_mcg float,
+    caffeine_mg float,
+    theobromine_mg float,
+    alcohol_g float,
+    water_intake_g float,
+	foreign key (seqn) references demo_j(seqn)
+);
+
+load data local infile '~/data/DR1TOT_J.csv'
+into table diet_j
+fields terminated by ','
+lines terminated by '\n'
+ignore 1 rows;
 
 drop table if exists mcq_j;
 create table mcq_j (
@@ -51,7 +172,14 @@ create table mcq_j (
     heart_attack int,
     thyroid_problem int,
     chronic_bronchitis int,
-    fatty_liver int
+    fatty_liver int,
+    foreign key (seqn) references demo_j (seqn),
+    foreign key (congestive_heart_failure) references response_lookup (code),
+    foreign key (coronary_heart_disease) references response_lookup (code),
+    foreign key (heart_attack) references response_lookup (code),
+    foreign key (thyroid_problem) references response_lookup (code),
+    foreign key (chronic_bronchitis) references response_lookup (code),
+    foreign key (fatty_liver) references response_lookup (code)
 );
 
 load data local infile '~/data/MCQ_J.csv'
@@ -96,7 +224,8 @@ create table biopro_j (
 	cholesterol_mg_dl float,
 	total_protein_g_dl float,
 	triglycerides_mg_dl float,
-	uric_acid_mg_dl float
+	uric_acid_mg_dl float,
+    foreign key (seqn) references demo_j (seqn)
 );
 
 load data local
@@ -132,6 +261,11 @@ ignore 1 rows
     triglycerides_mg_dl,
     uric_acid_mg_dl
 );
+
+/*
+See how different health condition populations have biomarkers deviating from
+healthy population means
+*/
 
 create or replace view healthy as
 select d.seqn
@@ -221,17 +355,18 @@ select
 from biopro_j b
 join healthy h on b.seqn = h.seqn;
 
-/* Add any target cohort conditions desired for biomarker deviation analysis */
 drop table if exists target_cohort;
 create temporary table target_cohort as
 select seqn
 from mcq_j
 where
-    #coronary_heart_disease = 1
-    #congestive_heart_failure = 1
-    #heart_attack = 1
-    #thyroid_problem != 1
-	#chronic_bronchitis != 1
+    /*
+    coronary_heart_disease = 1
+    congestive_heart_failure = 1
+    heart_attack = 1
+    thyroid_problem != 1
+	chronic_bronchitis != 1
+    */
     fatty_liver = 1
 ;
 
@@ -293,6 +428,10 @@ select
 from cohort_means c
 cross join biomarker_baseline b;
 
+/*
+Examine how high alanine aminotransferse and triglycerides
+increase your risk of heart, liver, and thyroid health conditions
+*/
 
 create or replace view disease_baseline as
 select
@@ -305,7 +444,6 @@ select
 from mcq_j m
 join biopro_j b on m.seqn = b.seqn;
 
-/* Add any desired biomarker cohort filters for risk analysis */
 drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
 select seqn
@@ -334,3 +472,122 @@ select
     c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_risk
 from cohort_disease_prev c
 cross join disease_baseline b;
+
+/*
+Examine if there are statistically significant difference in depressed versus
+non depressed diets
+*/
+
+drop table if exists diet_baseline;
+create temporary table diet_baseline as
+select
+    avg(d.sugars_g) as sugars_mean, stddev_pop(d.sugars_g) as sugars_std,
+    avg(d.fiber_g) as fiber_mean, stddev_pop(d.fiber_g) as fiber_std,
+    avg(d.saturated_fat_g) as sat_fat_mean, stddev_pop(d.saturated_fat_g) as sat_fat_std,
+    avg(d.folate_total_mcg) as folate_mean, stddev_pop(d.folate_total_mcg) as folate_std,
+    avg(d.magnesium_mg) as mag_mean, stddev_pop(d.magnesium_mg) as mag_std,
+    avg(d.alcohol_g) as alcohol_mean, stddev_pop(d.alcohol_g) as alcohol_std
+from diet_j d
+join healthy h on d.seqn = h.seqn;
+
+drop table if exists depressed_cohort;
+create temporary table depressed_cohort as
+select seqn
+from dpq_j
+where feeling_depressed >= 2;
+
+drop table if exists depressed_diet_means;
+create temporary table depressed_diet_means as
+select
+    avg(d.sugars_g) as sugars_mean,
+    avg(d.fiber_g) as fiber_mean,
+    avg(d.saturated_fat_g) as sat_fat_mean,
+    avg(d.folate_total_mcg) as folate_mean,
+    avg(d.magnesium_mg) as mag_mean,
+    avg(d.alcohol_g) as alcohol_mean
+from diet_j d
+join depressed_cohort c on d.seqn = c.seqn;
+
+select
+    (c.sugars_mean - b.sugars_mean) / b.sugars_std as sugars_z,
+    (c.fiber_mean - b.fiber_mean) / b.fiber_std as fiber_z,
+    (c.sat_fat_mean - b.sat_fat_mean) / b.sat_fat_std as sat_fat_z,
+    (c.folate_mean - b.folate_mean) / b.folate_std as folate_z,
+    (c.mag_mean - b.mag_mean) / b.mag_std as magnesium_z,
+    (c.alcohol_mean - b.alcohol_mean) / b.alcohol_std as alcohol_z
+from depressed_diet_means c
+cross join diet_baseline b;
+
+/*
+Examine how low vitamin d and poor sleep
+increases your risk of chd, fatty liver,
+and depression. 2 means more than half days
+*/
+
+drop table if exists expanded_disease_baseline;
+create temporary table expanded_disease_baseline as
+select
+    avg(m.coronary_heart_disease = 1) as chd_prev,
+    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(dpq.feeling_depressed >= 2) as severe_depression_prev
+from mcq_j m
+join dpq_j dpq on m.seqn = dpq.seqn;
+
+drop table if exists poor_sleep_low_vitd_cohort;
+create temporary table poor_sleep_low_vitd_cohort as
+select v.seqn
+from vid_j v
+join slq_j s on v.seqn = s.seqn
+where v.vitamin_d_level_nmol_L < 30
+  and s.told_doctor_trouble_sleeping = 1;
+
+drop table if exists poor_sleep_low_vitd_prev;
+create temporary table poor_sleep_low_vitd_prev as
+select
+    avg(m.coronary_heart_disease = 1) as chd_prev,
+    avg(m.fatty_liver = 1) as fatty_liver_prev,
+    avg(dpq.feeling_depressed >= 2) as severe_depression_prev
+from poor_sleep_low_vitd_cohort c
+join mcq_j m on c.seqn = m.seqn
+join dpq_j dpq on c.seqn = dpq.seqn;
+
+select
+    c.chd_prev / nullif(b.chd_prev, 0) as chd_relative_risk,
+    c.fatty_liver_prev / nullif(b.fatty_liver_prev, 0) as fatty_liver_relative_risk,
+    c.severe_depression_prev / nullif(b.severe_depression_prev, 0) as depression_relative_risk
+from poor_sleep_low_vitd_prev c
+cross join expanded_disease_baseline b;
+
+/*
+Examine how really poor diets impact biomarkers
+by comparing z scores of the cohorts
+*/
+
+drop table if exists toxic_diet_cohort;
+create temporary table toxic_diet_cohort as
+select seqn
+from diet_j
+where sugars_g > 100
+  and saturated_fat_g > 35
+  and fiber_g < 10;
+
+drop table if exists toxic_diet_means;
+create temporary table toxic_diet_means as
+select
+    avg(bio.glucose_mg_dl) as glucose_mean,
+    avg(bio.triglycerides_mg_dl) as triglycerides_mean,
+    avg(bio.cholesterol_mg_dl) as cholesterol_mean,
+    avg(bio.alt_u_l) as alt_mean,
+    avg(bio.uric_acid_mg_dl) as uric_acid_mean,
+    avg(bio.globulin_g_dL) as globulin_mean
+from biopro_j bio
+join toxic_diet_cohort c on bio.seqn = c.seqn;
+select
+    (c.glucose_mean - b.glucose_mean) / b.glucose_std as glucose_z,
+    (c.triglycerides_mean - b.triglycerides_mean) / b.triglycerides_std as triglycerides_z,
+    (c.cholesterol_mean - b.cholesterol_mean) / b.cholesterol_std as cholesterol_z,
+    (c.alt_mean - b.alt_mean) / b.alt_std as alt_liver_z,
+    (c.uric_acid_mean - b.uric_acid_mean) / b.uric_acid_std as uric_acid_z,
+    (c.globulin_mean - b.globulin_mean) / b.globulin_std as inflammation_globulin_z
+from toxic_diet_means c
+cross join biomarker_baseline b;
