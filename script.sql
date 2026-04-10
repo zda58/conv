@@ -9,7 +9,7 @@ create table gender_lookup (
     code int primary key,
     meaning varchar(50)
 );
-insert into gender_lookup (code, meaning) values 
+insert into gender_lookup (code, meaning) values
 (1, 'Male'), (2, 'Female');
 
 drop table if exists response_lookup;
@@ -17,7 +17,7 @@ create table response_lookup (
     code int primary key,
     meaning varchar(50)
 );
-insert into response_lookup (code, meaning) values 
+insert into response_lookup (code, meaning) values
 (1, 'Yes'), (2, 'No'), (7, 'Refused'), (9, 'Don''t Know');
 
 drop table if exists frequency_lookup;
@@ -26,9 +26,11 @@ create table frequency_lookup (
     meaning varchar(50)
 );
 
-insert into frequency_lookup (code, meaning) values 
+insert into frequency_lookup (code, meaning) values
 (0, 'Not at all'), (1, 'Several days'), (2, 'More than half the days'),
 (3, 'Nearly every day'), (7, 'Refused'), (9, 'Don''t Know');
+
+set FOREIGN_KEY_CHECKS = 0;
 
 drop table if exists demo_j;
 create table demo_j (
@@ -262,6 +264,8 @@ ignore 1 rows
     uric_acid_mg_dl
 );
 
+set FOREIGN_KEY_CHECKS = 1;
+
 /*
 See how different health condition populations have biomarkers deviating from
 healthy population means
@@ -448,8 +452,8 @@ drop temporary table if exists biomarker_cohort;
 create temporary table biomarker_cohort as
 select seqn
 from biopro_j
-where alt_u_l > 25
-and triglycerides_mg_dl > 130;
+where cholesterol_mg_dl > 300
+or glucose_mg_dl > 140;
 
 drop table if exists cohort_disease_prev;
 create temporary table cohort_disease_prev as
